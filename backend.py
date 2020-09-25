@@ -4,7 +4,7 @@ from os.path import join, normpath
 import dlmgr
 import tarfile
 import safetar
-import shellinteract
+from shellinteract import InteractiveShell
 
 
 class Builder:
@@ -38,15 +38,18 @@ class MSYS2Builder(Builder):
         with tarfile.open(file) as f:
             f.extractall(self.build_dir, members=safetar.safemembers(f, log_file))
         print('Running MSYS2 first startup...', file=log_file)
-        subprocess.run(["cmd", "/c", "set MSYSTEM=MINGW64&& {} --login"
-                       .format(join(self.build_dir, normpath('msys2/usr/bin/bash.exe')))],
-                       input="exit\n", encoding='utf8', stdout=log_file, stderr=subprocess.STDOUT)
+        shell = InteractiveShell(["cmd", "/c", "set MSYSTEM=MINGW64&& set PS1=shell_prompt$&& {} --login"
+                                 .format(join(self.build_dir, normpath('msys2/usr/bin/bash.exe')))],
+                                 'shell_prompt$', log_file)
+        shell.stop()
         print('Updating MSYS2...', file=log_file)
-        subprocess.run(["cmd", "/c", "set MSYSTEM=MINGW64&& {} --login"
-                       .format(join(self.build_dir, normpath('msys2/usr/bin/bash.exe')))],
-                       input="pacman -Syu --noconfirm\n", encoding='utf8', stdout=log_file, stderr=subprocess.STDOUT)
+        shell = InteractiveShell(["cmd", "/c", "set MSYSTEM=MINGW64&& set PS1=shell_prompt$&& {} --login"
+                                 .format(join(self.build_dir, normpath('msys2/usr/bin/bash.exe')))],
+                                 'shell_prompt$', log_file)
+        shell.execute_and_get_output('pacman -Syu')
         print('Installing dependencies...', file=log_file)
-        subprocess.run(["cmd", "/c", "set MSYSTEM=MINGW64&& set PS1=shell_prompt$&& {} --login"
-                       .format(join(self.build_dir, normpath('msys2/usr/bin/bash.exe')))],
-                       input="pacman -S --noconfirm {}\n".format(self.build_type["deps"]["MSYS2"]),
-                       encoding='utf8', stdout=log_file, stderr=subprocess.STDOUT)
+        shell.execute_and_get_output('pacman -S --noconfirm {}'.format(self.build_type['deps']['MSYS2']))
+        print('Cloning the repository...', file=log_file)
+        shell.execute_and_get_output('cd')
+        shell.execute_and_get_output('git clone {} {} portrepo'.format(self.build_type['cloneopts'],self.build_type['repo']))
+        shell.execute_and_get_output('cd portrepo')
