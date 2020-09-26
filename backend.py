@@ -13,7 +13,7 @@ class Builder:
         self.build_dir = build_dir
         self.log_file = log_file
 
-    def prepare(self):
+    def prepare(self, reused=None):
         """returns a list of files and folders to be reused."""
         raise NotImplementedError()
 
@@ -32,7 +32,7 @@ class MSYS2Builder(Builder):
     def __init__(self, build_type, build_dir, log_file):
         super().__init__(build_type, build_dir, log_file)
 
-    def prepare(self):
+    def prepare(self, reused=None):
         file = dlmgr.download(MSYS2Builder.URL, self.build_dir)
         log_file = open(self.log_file, 'a')
         with tarfile.open(file) as f:
@@ -51,5 +51,6 @@ class MSYS2Builder(Builder):
         shell.execute_and_get_output('pacman -S --noconfirm {}'.format(self.build_type['deps']['MSYS2']))
         print('Cloning the repository...', file=log_file)
         shell.execute_and_get_output('cd')
-        shell.execute_and_get_output('git clone {} {} portrepo'.format(self.build_type['cloneopts'],self.build_type['repo']))
+        shell.execute_and_get_output(
+            'git clone {} {} portrepo'.format(self.build_type['cloneopts'], self.build_type['repo']))
         shell.execute_and_get_output('cd portrepo')
