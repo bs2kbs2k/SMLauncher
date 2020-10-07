@@ -1,6 +1,9 @@
-import zipfile
 import json
-from os.path import normpath, join
+import sys
+import zipfile
+from os.path import normpath
+
+import safetar
 
 
 class UPF:
@@ -30,6 +33,8 @@ class UPF:
             raise ValueError("Metadata invalid: No version attribute")
         if "name" not in self.metadata:
             raise ValueError("Metadata invalid: No name attribute")
+        if "id" not in self.metadata:
+            raise ValueError("Metadata invalid: No id attribute")
         if "format_version" not in self.metadata:
             raise ValueError("Metadata invalid: No format_version attribute")
 
@@ -39,12 +44,11 @@ class UPF:
 
         self.version = self.metadata["version"]
         self.name = self.metadata["name"]
+        self.name = self.metadata["id"]
         self.author = self.metadata["author"] if "author" in self.metadata else "Unknown"
 
     def list_overwrites(self):
         return self.overwrites
 
-    def extract(self, location):
-        for file in self.overwrites:
-            if join(normpath(location), file).startswith(normpath(location)):
-                self.zip_file.extract(file, join(normpath(location), file))
+    def extract(self, location, log_file=sys.stdout):
+        self.zip_file.extractall(location, safetar.safemembers(self.zip_file.infolist(), log_file))
