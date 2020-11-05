@@ -2,6 +2,7 @@ from n64swap import RomType, get_rom_format, convert
 import zipfile
 import hashlib
 import io
+import sys
 
 VALID_HASHES = [
     "4ec89bd5cfe2aec976b6db48e9abba9046eaccdd89b1f40893be1a0f6740decf24d95bc06313966a044034233c2d1774c00ef7539d3734297b378dfd34645e47",
@@ -70,9 +71,9 @@ class ROM:
             raise ValueError("ROM file is not genuine")
         self.metadata = INFO_TABLE[romhash]
 
-    def to_z64(self, outfile):
+    def to_z64(self, outfile, log=sys.stdout):
         infile = io.BytesIO(self.ROM)
-        convert(infile, outfile)
+        convert(infile, outfile, log_file=log)
 
     def get_correct_filename(self):
         return 'baserom.{0[0]}.{0[1]}'.format(self.metadata)
