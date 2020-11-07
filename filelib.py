@@ -16,7 +16,7 @@ def cp_list(lst, dst):
 
 def win_to_msys(path):
     abspath = os.path.abspath(path)
-    seppedpath = os.path.split(abspath)
+    seppedpath = list(abspath.split('\\'))
     seppedpath[0] = seppedpath[0][0].lower()
     escapedpath = [a.replace('/', '\\/') for a in seppedpath]
     return '/' + '/'.join(escapedpath)
