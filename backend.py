@@ -93,7 +93,29 @@ class PRootBuilder(Builder):
         file = dlmgr.download(MSYS2Builder.URL, self.build_dir)
         log_file = open(self.log_file, 'a')
         with tarfile.open(file) as f:
-            f.extractall(self.build_dir, members=safetar.safemembers(f, log_file))
+            
+            import os
+            
+            def is_within_directory(directory, target):
+                
+                abs_directory = os.path.abspath(directory)
+                abs_target = os.path.abspath(target)
+            
+                prefix = os.path.commonprefix([abs_directory, abs_target])
+                
+                return prefix == abs_directory
+            
+            def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+            
+                for member in tar.getmembers():
+                    member_path = os.path.join(path, member.name)
+                    if not is_within_directory(path, member_path):
+                        raise Exception("Attempted Path Traversal in Tar File")
+            
+                tar.extractall(path, members, numeric_owner=numeric_owner) 
+                
+            
+            safe_extract(f, self.build_dir, members=safetar.safemembers(f,log_file))
         print('Running MSYS2 first startup...', file=log_file)
         shell = InteractiveShell(["cmd", "/c", "set MSYSTEM=MINGW64&& set PS1=shell_prompt$&& {} --login"
                                  .format(join(self.build_dir, normpath('msys2/usr/bin/bash.exe')))],
